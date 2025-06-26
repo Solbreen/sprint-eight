@@ -21,6 +21,7 @@ var (
 // getTestParcel возвращает тестовую посылку
 func getTestParcel() Parcel {
 	return Parcel{
+		Number:    randRange.Intn(1000),
 		Client:    1000,
 		Status:    ParcelStatusRegistered,
 		Address:   "test",
@@ -31,57 +32,142 @@ func getTestParcel() Parcel {
 // TestAddGetDelete проверяет добавление, получение и удаление посылки
 func TestAddGetDelete(t *testing.T) {
 	// prepare
-	db, err := // настройте подключение к БД
+	db, err := sql.Open("sqlite", "tracker.db")
+	if err != nil {
+		require.NoError(t, err)
+	}
+	defer db.Close()
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
 
 	// add
 	// добавьте новую посылку в БД, убедитесь в отсутствии ошибки и наличии идентификатора
+	id, err := store.Add(parcel)
+	if err != nil {
+		require.NoError(t, err)
+	}
+	require.GreaterOrEqualf(t, id, 0, "Идентификатор не может быть меньше 0")
 
 	// get
 	// получите только что добавленную посылку, убедитесь в отсутствии ошибки
 	// проверьте, что значения всех полей в полученном объекте совпадают со значениями полей в переменной parcel
+	resPar, err := store.Get(parcel.Number)
+	if err != nil {
+		require.NoError(t, err)
+	}
+	require.Equal(t, resPar, parcel)
 
 	// delete
 	// удалите добавленную посылку, убедитесь в отсутствии ошибки
 	// проверьте, что посылку больше нельзя получить из БД
+	err = store.Delete(parcel.Number)
+	if err != nil {
+		require.NoError(t, err)
+	}
+	_, err = store.Get(parcel.Number)
+	if err != nil {
+		require.Error(t, err)
+	}
 }
 
 // TestSetAddress проверяет обновление адреса
 func TestSetAddress(t *testing.T) {
 	// prepare
-	db, err := // настройте подключение к БД
+	db, err := sql.Open("sqlite", "tracker.db")
+	if err != nil {
+		require.NoError(t, err)
+	}
+	defer db.Close()
+	store := NewParcelStore(db)
+	parcel := getTestParcel()
 
 	// add
 	// добавьте новую посылку в БД, убедитесь в отсутствии ошибки и наличии идентификатора
+	id, err := store.Add(parcel)
+	if err != nil {
+		require.NoError(t, err)
+	}
+	require.GreaterOrEqualf(t, id, 0, "Идентификатор не может быть меньше 0")
 
 	// set address
 	// обновите адрес, убедитесь в отсутствии ошибки
 	newAddress := "new test address"
+	err = store.SetAddress(parcel.Number, newAddress)
+	if err != nil {
+		require.NoError(t, err)
+	}
 
 	// check
 	// получите добавленную посылку и убедитесь, что адрес обновился
+	resPar, err := store.Get(parcel.Number)
+	if err != nil {
+		require.NoError(t, err)
+	}
+	require.Equal(t, resPar.Address, newAddress)
+
+	err = store.Delete(parcel.Number)
+	if err != nil {
+		require.NoError(t, err)
+	}
+	_, err = store.Get(parcel.Number)
+	if err != nil {
+		require.Error(t, err)
+	}
 }
 
 // TestSetStatus проверяет обновление статуса
 func TestSetStatus(t *testing.T) {
 	// prepare
-	db, err := // настройте подключение к БД
+	db, err := sql.Open("sqlite", "tracker.db")
+	if err != nil {
+		require.NoError(t, err)
+	}
+	defer db.Close()
+	store := NewParcelStore(db)
+	parcel := getTestParcel()
 
 	// add
 	// добавьте новую посылку в БД, убедитесь в отсутствии ошибки и наличии идентификатора
+	id, err := store.Add(parcel)
+	if err != nil {
+		require.NoError(t, err)
+	}
+	require.GreaterOrEqualf(t, id, 0, "Идентификатор не может быть меньше 0")
 
 	// set status
 	// обновите статус, убедитесь в отсутствии ошибки
+	err = store.SetStatus(parcel.Number, ParcelStatusDelivered)
+	if err != nil {
+		require.NoError(t, err)
+	}
 
-	// check
+	// checkrandRange.Intn(1000)
 	// получите добавленную посылку и убедитесь, что статус обновился
+	resPar, err := store.Get(parcel.Number)
+	if err != nil {
+		require.NoError(t, err)
+	}
+	require.Equal(t, resPar.Status, ParcelStatusDelivered)
+
+	err = store.Delete(parcel.Number)
+	if err != nil {
+		require.NoError(t, err)
+	}
+	_, err = store.Get(parcel.Number)
+	if err != nil {
+		require.Error(t, err)
+	}
 }
 
 // TestGetByClient проверяет получение посылок по идентификатору клиента
 func TestGetByClient(t *testing.T) {
 	// prepare
-	db, err := // настройте подключение к БД
+	db, err := sql.Open("sqlite", "tracker.db")
+	if err != nil {
+		require.NoError(t, err)
+	}
+	defer db.Close()
+	store := NewParcelStore(db)
 
 	parcels := []Parcel{
 		getTestParcel(),
@@ -98,7 +184,11 @@ func TestGetByClient(t *testing.T) {
 
 	// add
 	for i := 0; i < len(parcels); i++ {
-		id, err := // добавьте новую посылку в БД, убедитесь в отсутствии ошибки и наличии идентификатора
+		id, err := store.Add(parcels[i])
+		if err != nil {
+			require.NoError(t, err)
+		}
+		require.GreaterOrEqualf(t, id, 0, "Идентификатор не может быть меньше 0")
 
 		// обновляем идентификатор добавленной у посылки
 		parcels[i].Number = id
@@ -108,14 +198,31 @@ func TestGetByClient(t *testing.T) {
 	}
 
 	// get by client
-	storedParcels, err := // получите список посылок по идентификатору клиента, сохранённого в переменной client
+	storedParcels, err := store.GetByClient(client)
 	// убедитесь в отсутствии ошибки
+	if err != nil {
+		require.Error(t, err)
+	}
 	// убедитесь, что количество полученных посылок совпадает с количеством добавленных
+	require.Equal(t, len(storedParcels), len(parcelMap))
 
 	// check
 	for _, parcel := range storedParcels {
 		// в parcelMap лежат добавленные посылки, ключ - идентификатор посылки, значение - сама посылка
 		// убедитесь, что все посылки из storedParcels есть в parcelMap
 		// убедитесь, что значения полей полученных посылок заполнены верно
+
+		require.Equal(t, parcelMap[parcel.Number], parcel)
+	}
+
+	for i := 0; i < len(storedParcels); i++ {
+		err = store.Delete(storedParcels[i].Number)
+		if err != nil {
+			require.NoError(t, err)
+		}
+		_, err = store.Get(storedParcels[i].Number)
+		if err != nil {
+			require.Error(t, err)
+		}
 	}
 }

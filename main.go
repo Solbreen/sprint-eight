@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"math/rand"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -12,6 +13,11 @@ const (
 	ParcelStatusRegistered = "registered"
 	ParcelStatusSent       = "sent"
 	ParcelStatusDelivered  = "delivered"
+)
+
+var (
+	rS = rand.NewSource(time.Now().UnixNano())
+	rR = rand.New(rS)
 )
 
 type Parcel struct {
@@ -32,6 +38,7 @@ func NewParcelService(store ParcelStore) ParcelService {
 
 func (s ParcelService) Register(client int, address string) (Parcel, error) {
 	parcel := Parcel{
+		Number:    rR.Intn(10_000_000),
 		Client:    client,
 		Status:    ParcelStatusRegistered,
 		Address:   address,
@@ -98,8 +105,13 @@ func (s ParcelService) Delete(number int) error {
 
 func main() {
 	// настройте подключение к БД
-
-	store := // создайте объект ParcelStore функцией NewParcelStore
+	db, err := sql.Open("sqlite", "tracker.db")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer db.Close()
+	store := NewParcelStore(db)
 	service := NewParcelService(store)
 
 	// регистрация посылки
