@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"math/rand"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -13,11 +12,6 @@ const (
 	ParcelStatusRegistered = "registered"
 	ParcelStatusSent       = "sent"
 	ParcelStatusDelivered  = "delivered"
-)
-
-var (
-	rS = rand.NewSource(time.Now().UnixNano())
-	rR = rand.New(rS)
 )
 
 type Parcel struct {
@@ -38,7 +32,6 @@ func NewParcelService(store ParcelStore) ParcelService {
 
 func (s ParcelService) Register(client int, address string) (Parcel, error) {
 	parcel := Parcel{
-		Number:    rR.Intn(10_000_000),
 		Client:    client,
 		Status:    ParcelStatusRegistered,
 		Address:   address,
